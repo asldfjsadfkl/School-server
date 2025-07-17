@@ -30,8 +30,8 @@ const articles = router.post("/createarticle", isAuth, async (req, res) => {
 })
   .get("/:id", async (req, res) => {
     try {
-      const id = decodeURIComponent(req.params.id);
-      const art = await ARTICLE.findOne({ name: req.params.id });
+      const ids = req.params.id.replaceAll('-', " ");
+      const art = await ARTICLE.findOne({ name: ids });
       if (art) {
         res.status(200).json({
           art,
@@ -63,8 +63,9 @@ const articles = router.post("/createarticle", isAuth, async (req, res) => {
   })
   .patch("/:id", isAuth, async (req, res) => {
     try {
+      const ids = req.params.id.replaceAll('-', " ");
       const art = await ARTICLE.findOneAndUpdate(
-        { name: req.params.id },
+        { name: ids },
         {
           name: req.body.name,
           text: req.body.text,
