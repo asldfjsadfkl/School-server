@@ -42,7 +42,6 @@ app.use(
 );
 app.use("/api/v1", pdffileRoute);
 app.use(fileupload());
-
 app.use("/", router);
 app.use("/student", student);
 app.use("/teacher", teacher);

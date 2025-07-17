@@ -124,6 +124,4 @@ const results = router
     }
   })
 
-
-
 module.exports = results

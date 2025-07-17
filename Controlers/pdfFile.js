@@ -1,4 +1,5 @@
 const express = require('express');
+const NOTIFICATION = require('../Models/Setting.js');
 const cloudinary = require('cloudinary').v2
 const streamifier = require('streamifier');
 const PDF = require('../Models/PdfFile')
@@ -6,8 +7,8 @@ const multer = require('multer');
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 const pdffileRoute = express.Router();
-
-
+const nodeCache = require('node-cache')// cache 
+const nodecache = new nodeCache({ stdTTL: 0 });
 
 pdffileRoute.post('/pdffile', upload.single('pdf'), async (req, res) => {
     const { name } = req.body;
@@ -63,6 +64,22 @@ pdffileRoute.post('/pdffile', upload.single('pdf'), async (req, res) => {
 
     } catch (error) {
     }
-})
+}).get("/notification", async (req, res) => {
+    try {
+        let std;
+        if (nodecache.has('notify')) {
+            std = nodecache.get('notify');
+        } else {
+            std = await NOTIFICATION.find();
+            nodecache.set('notify', std);
+        }
+
+        res.status(200).json({ std })
+    } catch (error) {
+        res.status(500).json({
+            message: error.message,
+        });
+    }
+});
 
 module.exports = pdffileRoute;
