@@ -1,11 +1,10 @@
 const ARTICLE = require("../Models/Articles");
 const express = require("express");
 const isAuth = require("../Utils/Auth");
-const node_Cache = require('node-cache');
 const router = express.Router();
-const nodeCache = new node_Cache()
-const articles = router.post("/createarticle", isAuth, async (req, res) => {
 
+
+const articles = router.post("/createarticle", isAuth, async (req, res) => {
   try {
     const art = await ARTICLE.create({
       name: req.body.name,

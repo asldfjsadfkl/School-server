@@ -2,6 +2,7 @@ const cron = require("node-cron");
 const FEE = require('../Models/Fee');
 const STUDENT = require('../Models/Student');
 
+
 const generateMonthlyFees = () => {
     cron.schedule("0 0 1 * *", async () => {
         try {
@@ -9,7 +10,6 @@ const generateMonthlyFees = () => {
             const now = new Date();
             const month = now.toLocaleString("en-US", { month: "long" });
             const year = now.getFullYear();
-
             for (const student of students) {
                 const alreadyExists = await FEE.findOne({
                     admissionNumber: student.admissionNumber,

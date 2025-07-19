@@ -1,13 +1,12 @@
 const express = require("express");
 const sendMail = require("../Utils/sendMailer.js");
-const jwt = require("jsonwebtoken");
 const USER = require("../Models/User.js");
 const bcrypt = require("bcrypt");
-const node_Cache = require("node-cache");
 const isAuth = require("../Utils/Auth.js");
 const passport = require('passport');
+const redisClient = require("../Utils/Redis.js");
 const router = express.Router();
-const nodeCache = new node_Cache();
+
 
 router.post("/register", async (req, res) => {
   const { email } = req.body;
@@ -78,7 +77,7 @@ router.post("/login", async (req, res) => {
 /// logout user
 router.get("/logout", async (req, res) => {
   try {
-    nodeCache.del("user");
+    redisClient.del("user");
     res
       .status(200)
       .cookie("auth_token", "", {
@@ -99,27 +98,21 @@ router.get("/logout", async (req, res) => {
 // ///// logout user
 router.get("/getuser", isAuth, async (req, res) => {
   try {
-    if (nodeCache.has("user")) {
-      const user = nodeCache.get("user");
-      res.status(200).json({
-        user,
-      });
-    } else if (await USER.findById(req.user)) {
-      const user = await USER.findById(req.user);
-      nodeCache.set("user", user);
-      res.status(200).json({
-        user,
-      });
-    } else {
-      res.status(401).json({
-        message: "User not found!",
-      });
-    }
+    const user1 = await redisClient.get('user');
+    if (user1) return res.status(200).json({ user: JSON.parse(user1) });
+
+    const user = await USER.findById(req.user);
+    redisClient.set('user', JSON.stringify(user));
+    res.status(200).json({
+      user,
+    });
+
   } catch (error) { }
 })
   .patch("/user/changepassword", isAuth, async (req, res) => {
     const { password, newpassword, confirmpassword } = req.body;
     try {
+      redisClient.del("user");
       const user = await USER.findOne(req.user);
       const passVerify = await user.comparePassword(password);
       if (newpassword !== confirmpassword || !passVerify) {
@@ -144,7 +137,7 @@ router.get("/getuser", isAuth, async (req, res) => {
   .patch("/changerole", isAuth, async (req, res) => {
     const { email, key, role } = req.body;
     try {
-      nodeCache.del("user");
+      redisClient.del("user");
       if (key === "naeem") {
         const user = await USER.findOne({ email });
         user.role = role;
@@ -162,6 +155,7 @@ router.get("/getuser", isAuth, async (req, res) => {
   .post("/forgetpassword", async (req, res) => {
     const { email } = req.body;
     try {
+      redisClient.del("user");
       const user = await USER.findOne({ email });
       if (!user) {
         res.status(404).json({ message: "not found" });
@@ -182,7 +176,7 @@ router.get("/getuser", isAuth, async (req, res) => {
   }).get('/oauth', passport.authenticate("google", {
     scope: ["profile", "email"],
     prompt: "select_account",
-    failureRedirect: "http://localhost:3000/login"
+    failureRedirect: process.env.CLIENT_URL,
   })).get("/callback", passport.authenticate("google", { session: false }), (req, res) => {
     if (req.user) {
       res.cookie("auth_token", req.user.token,

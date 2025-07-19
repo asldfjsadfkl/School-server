@@ -20,10 +20,18 @@ const cloudinary = require("cloudinary");
 const cors = require("cors");
 const express = require("express");
 const fileupload = require("express-fileupload");
-const { connectGoogleAuth } = require('./Utils/GoogleOtp.js')
+const { connectGoogleAuth } = require('./Utils/GoogleOtp.js');
+const redisClient = require("./Utils/Redis.js");
 require("dotenv").config();
 const app = express();
 const port = process.env.port || 4000;
+
+
+
+(async () => {
+  await redisClient.connect();
+  console.log('✅ Redis connected');
+})();
 
 database();
 app.use(cookieParser());

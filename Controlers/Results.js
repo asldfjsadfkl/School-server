@@ -1,9 +1,8 @@
 const express = require("express");
+const redisClient = require('../Utils/Redis')
 const RESULTS = require('../Models/Results')
 const isAuth = require("../Utils/Auth");
 const Student = require("../Models/Student");
-const nodeCacher = require('node-cache');
-const node_cacher = new nodeCacher();
 const router = express.Router();
 const results = router
   .post("/api/v1/results", async (req, res) => {
@@ -70,7 +69,6 @@ const results = router
       });
       res.status(200).json(data);
     } catch (error) {
-
     }
   }).delete('/api/v1/results/:id', async (req, res) => {
     try {
@@ -110,15 +108,26 @@ const results = router
     }
   }).get('/api/v1/resluts/position', async (req, res) => {
     try {
-      const positionHolder = {};
-      positionHolder.data10 = await RESULTS.find({ 'newClass': "10th" }).sort({ OM: -1 }).limit(5).populate({ path: 'studentId', select: 'name' });
-      positionHolder.data9 = await RESULTS.find({ 'newClass': "9th" }).sort({ OM: -1 }).limit(5).populate({ path: 'studentId', select: 'name' });
-      positionHolder.data8 = await RESULTS.find({ 'newClass': "8th" }).sort({ OM: -1 }).limit(5).populate({ path: 'studentId', select: 'name' });
-      positionHolder.data7 = await RESULTS.find({ 'newClass': "7th" }).sort({ OM: -1 }).limit(5).populate({ path: 'studentId', select: 'name' });
-      positionHolder.data6 = await RESULTS.find({ 'newClass': "6th" }).sort({ OM: -1 }).limit(5).populate({ path: 'studentId', select: 'name' });
-      positionHolder.data5 = await RESULTS.find({ 'newClass': "5th" }).sort({ OM: -1 }).limit(5).populate({ path: 'studentId', select: 'name' });
-      positionHolder.data4 = await RESULTS.find({ 'newClass': "4th" }).sort({ OM: -1 }).limit(5).populate({ path: 'studentId', select: 'name' });
-      positionHolder.data3 = await RESULTS.find({ 'newClass': "3th" }).sort({ OM: -1 }).limit(5).populate({ path: 'studentId', select: 'name' });
+      const positionHolders = await redisClient.get('positionsh');
+      if (positionHolders) return res.status(200).json({ positionHolder: JSON.parse(positionHolders) });
+      // else
+
+      const [data10, data9, data8, data7, data6, data5, data4, data3, data2, data1] =
+        await Promise.all([
+          RESULTS.find({ 'newClass': "10th" }).sort({ OM: -1 }).limit(5).populate({ path: 'studentId', select: 'name' }),
+          RESULTS.find({ 'newClass': "9th" }).sort({ OM: -1 }).limit(5).populate({ path: 'studentId', select: 'name' }),
+          RESULTS.find({ 'newClass': "8th" }).sort({ OM: -1 }).limit(5).populate({ path: 'studentId', select: 'name' }),
+          RESULTS.find({ 'newClass': "7th" }).sort({ OM: -1 }).limit(5).populate({ path: 'studentId', select: 'name' }),
+          RESULTS.find({ 'newClass': "6th" }).sort({ OM: -1 }).limit(5).populate({ path: 'studentId', select: 'name' }),
+          RESULTS.find({ 'newClass': "5th" }).sort({ OM: -1 }).limit(5).populate({ path: 'studentId', select: 'name' }),
+          RESULTS.find({ 'newClass': "4th" }).sort({ OM: -1 }).limit(5).populate({ path: 'studentId', select: 'name' }),
+          RESULTS.find({ 'newClass': "3th" }).sort({ OM: -1 }).limit(5).populate({ path: 'studentId', select: 'name' }),
+          RESULTS.find({ 'newClass': "2th" }).sort({ OM: -1 }).limit(5).populate({ path: 'studentId', select: 'name' }),
+          RESULTS.find({ 'newClass': "1th" }).sort({ OM: -1 }).limit(5).populate({ path: 'studentId', select: 'name' }),
+        ]);
+      const positionHolder = { data10, data9, data8, data7, data6, data5, data4, data3, data2, data1 };
+      redisClient.set('positionh', JSON.stringify(positionHolder), { EX: 3600 });
+
       res.status(200).json(positionHolder);
     } catch (error) {
     }

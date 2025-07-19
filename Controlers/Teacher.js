@@ -1,10 +1,12 @@
 const TEACHER = require("../Models/Teacher.js");
 const express = require("express");
+const redisClient = require('../Utils/Redis.js')
 const router = express.Router();
 
 const teacher = router
   .post("/teachercreate", async (req, res) => {
     try {
+      redisClient.del('teacher');
       const teacher = await TEACHER.create({
         name: req.body.name,
         fName: req.body.fName,
@@ -33,8 +35,12 @@ const teacher = router
   })
   .get("/all", async (req, res) => {
     try {
+      const teacher = await redisClient.get('teacher');
+      if (teacher) return res.status(200).json({ teachers: JSON.parse(teacher) });
+
       const teachers = await TEACHER.find();
       if (teachers) {
+        redisClient.set('teacher', JSON.stringify(teachers));
         res.status(200).json({
           success: true,
           teachers,
@@ -70,6 +76,7 @@ const teacher = router
   })
   .delete("/:id", async (req, res) => {
     try {
+      redisClient.del('teacher');
       const teacher = await TEACHER.findByIdAndDelete(req.params.id);
       if (teacher) {
         res.status(200).json({
@@ -84,6 +91,7 @@ const teacher = router
   })
   .patch("/:id", async (req, res) => {
     try {
+      redisClient.del('teacher');
       const teacher = await TEACHER.findByIdAndUpdate(req.params.id, {
         name: req.body.name,
         fName: req.body.fName,
